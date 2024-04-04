@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFileDialog, QSlider
-from PyQt5.QtGui import QPixmap, QImage, QFont, QPalette, QColor
+from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 import cv2
 import numpy as np
@@ -16,75 +16,103 @@ class ImageDisplayWidget(QWidget):
         self.main_layout = QVBoxLayout()
         self.resize(820, 620)
 
-        self.open_button = QPushButton('打开图片')
-        self.open_button.clicked.connect(self.open_image)
-
+        self.open_button = self.create_button("打开图片", self.open_image)
         self.img_win = QWidget()
         img_win_layout = QHBoxLayout()
-        orgin_layout = QVBoxLayout()
-        img_layout = QVBoxLayout()
         self.img_win.setLayout(img_win_layout)
 
         self.orgin_img_label = QLabel()
-        self.orgin_name = QLabel("原图")
-        # 设置QLabel内部文本居中
-        self.orgin_name.setAlignment(Qt.AlignCenter)
-        # 将QLabel添加到布局中，并设置居中对齐
-        orgin_layout.addWidget(self.orgin_img_label, alignment=Qt.AlignCenter)
-        orgin_layout.addWidget(self.orgin_name, alignment=Qt.AlignCenter)
         self.image_label = QLabel()
-        self.image_name = QLabel("处理后的图")
-        self.image_name.setAlignment(Qt.AlignCenter)  # 设置QLabel内部文本居中
-        img_layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
-        img_layout.addWidget(self.image_name, alignment=Qt.AlignCenter)
-        img_win_layout.addLayout(orgin_layout)
-        img_win_layout.addLayout(img_layout)
-        self.slider = QSlider(Qt.Horizontal)
-        self.slider.setMinimum(1)
-        self.slider.setMaximum(100)
-        self.slider.valueChanged.connect(self.process_image)
-        self.slider2 = QSlider(Qt.Horizontal)
-        self.slider2.setMinimum(1)
-        self.slider2.setMaximum(100)
-        self.slider2.valueChanged.connect(self.process_image)
+        self.add_image_view(img_win_layout, "原图", self.orgin_img_label)
+        self.add_image_view(img_win_layout, "处理后的图", self.image_label)
+
+        self.slider = self.create_slider(self.process_image)
+        self.slider2 = self.create_slider(self.process_image)
+
         self.slider_value_label = QLabel("矩形核大小: 0x0")
         self.slider_value_label2 = QLabel("腐蚀次数: 0")
         controls_layout = QHBoxLayout()
-        self.kernal_label = QLabel("矩形核大小（kernel）:")
-        controls_layout.addWidget(self.kernal_label)
-        controls_layout.addWidget(self.slider)
-        controls_layout.addWidget(self.slider_value_label)
+        self.add_control(controls_layout, "矩形核大小（kernel）:", self.slider, self.slider_value_label)
         controls_layout2 = QHBoxLayout()
-        self.iter_label = QLabel("腐蚀次数（iterations）:")
-        controls_layout2.addWidget(self.iter_label)
-        controls_layout2.addWidget(self.slider2)
-        controls_layout2.addWidget(self.slider_value_label2)
+        self.add_control(controls_layout2, "腐蚀次数（iterations）:", self.slider2, self.slider_value_label2)
+
         self.main_layout.addWidget(self.open_button)
         self.main_layout.addWidget(self.img_win)
         self.main_layout.addLayout(controls_layout)
         self.main_layout.addLayout(controls_layout2)
         self.setLayout(self.main_layout)
+
         self.setWindowTitle('腐蚀效果调试器')
-        self.set_common_style(self.open_button)
-        self.set_common_style(self.image_name)
-        self.set_common_style(self.orgin_name)
         self.set_common_style(self.slider_value_label)
         self.set_common_style(self.slider_value_label2)
-        self.set_common_style(self.kernal_label)
-        self.set_common_style(self.iter_label)
+        # self.set_common_style()
         self.show()
 
-    def set_common_style(self,label):
+    def add_image_view(self, layout, label_text, image_label):
+        image_view_layout = QVBoxLayout()
+        name_label = QLabel(label_text)
+        name_label.setAlignment(Qt.AlignCenter)
+        image_view_layout.addWidget(image_label, alignment=Qt.AlignCenter)
+        image_view_layout.addWidget(name_label, alignment=Qt.AlignCenter)
+        layout.addLayout(image_view_layout)
+        self.set_common_style(name_label)
+
+    def create_button(self, text, clicked_slot):
+        button = QPushButton(text)
+        button.clicked.connect(clicked_slot)
+        self.set_common_style(button)
+        return button
+
+    def create_slider(self, value_changed_slot):
+        slider = QSlider(Qt.Horizontal)
+        slider.setMinimum(1)
+        slider.setMaximum(100)
+        slider.valueChanged.connect(value_changed_slot)
+        self.set_slider_style(slider)
+        return slider
+
+    def add_control(self, layout, label_text, slider, value_label):
+        control_label = QLabel(label_text)
+        layout.addWidget(control_label)
+        layout.addWidget(slider)
+        layout.addWidget(value_label)
+        self.set_common_style(control_label)
+
+    def set_common_style(self, label):
         label.setStyleSheet("""  
             QLabel {  
                 font-family: '微软雅黑';  
                 font-size: 12pt;  
                 color: red;  
             }
-                        QPushButton {  
+            QPushButton {  
                 font-family: '微软雅黑';  
                 font-size: 12pt;  
                 color: red;  
+            }  
+        """)
+
+    def set_slider_style(self, slider):
+        slider.setStyleSheet("""  
+            QSlider::groove:horizontal {  
+                background: #999999;  
+                height: 8px;  
+                margin: 0;  
+                border-radius: 4px;  
+            }  
+            QSlider::handle:horizontal {  
+                background: red;  
+                border: 1px solid #999999;  
+                width: 16px;  
+                height: 16px;  
+                margin: -7px 0; /* handle is placed in the middle */  
+                border-radius: 8px;  
+            }  
+            QSlider::add-page:horizontal {  
+                background: #FF0000; /* This is the red color from your font color */  
+            }  
+            QSlider::sub-page:horizontal {  
+                background: #555555; /* You can choose a different color for the filled part */  
             }  
         """)
     def open_image(self):
