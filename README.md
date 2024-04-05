@@ -1,5 +1,9 @@
 # 腐蚀效果调试器  
-  
+![ui.png](ui.png)
+
+![github.png](github.png)
+
+![github_1.png](github_1.png)  
 ## 简介  
   
 本项目是一个基于Python和PyQt5的简单GUI应用，旨在为用户提供一个可视化的环境来调试和展示图像的腐蚀效果。用户可以通过调整参数来实时查看不同腐蚀程度对图像的影响。  
